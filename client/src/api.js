@@ -1,10 +1,18 @@
-const API = process.env.REACT_APP_API_URL;
+const API = process.env.REACT_APP_API_URL; 
 
-export async function request(path, options = {}) {
-  const res = await fetch(API + path, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
+export async function request(path, method = "GET", body = null) {
+  const res = await fetch(`${API}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : null,
   });
-  if (!res.ok) throw new Error("API error");
+
+  if (!res.ok) {
+    const errorMessage = await res.text();
+    throw new Error(errorMessage || "API error");
+  }
+
   return res.json();
 }

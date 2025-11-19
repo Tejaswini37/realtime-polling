@@ -7,11 +7,13 @@ app.use(cors());
 app.use(express.json());
 
 // ---- Connect to Database ----
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/pollsDB";
+
 mongoose
-  .connect("mongodb://localhost:27017/pollsDB")
+  .connect(MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(() => console.log("Failed to connect. Using memory store."));
-  
+
 let useMemory = mongoose.connection.readyState !== 1;
 let memoryDB = [];
 let idCounter = 1;
@@ -30,7 +32,7 @@ const Poll = mongoose.model("Poll", pollSchema);
 app.get("/api/polls", async (req, res) => {
   if (useMemory) {
     return res.json(
-      memoryDB.map(p => ({
+      memoryDB.map((p) => ({
         id: p.id,
         question: p.question,
         createdAt: p.createdAt,
@@ -40,7 +42,7 @@ app.get("/api/polls", async (req, res) => {
 
   const polls = await Poll.find({}, "question createdAt");
   res.json(
-    polls.map(p => ({
+    polls.map((p) => ({
       id: p._id,
       question: p.question,
       createdAt: p.createdAt,
@@ -59,7 +61,7 @@ app.post("/api/polls", async (req, res) => {
     const poll = {
       id: idCounter++,
       question,
-      options: options.map(o => ({ text: o, votes: 0 })),
+      options: options.map((o) => ({ text: o, votes: 0 })),
       createdAt: new Date(),
     };
     memoryDB.push(poll);
@@ -68,7 +70,7 @@ app.post("/api/polls", async (req, res) => {
 
   const poll = await Poll.create({
     question,
-    options: options.map(o => ({ text: o })),
+    options: options.map((o) => ({ text: o })),
   });
   res.json(poll);
 });
@@ -78,7 +80,7 @@ app.get("/api/polls/:id", async (req, res) => {
   const id = req.params.id;
 
   if (useMemory) {
-    const poll = memoryDB.find(p => p.id == id);
+    const poll = memoryDB.find((p) => p.id == id);
     return res.json(poll);
   }
 
@@ -92,7 +94,7 @@ app.post("/api/polls/:id/vote", async (req, res) => {
   const { optionIndex } = req.body;
 
   if (useMemory) {
-    const poll = memoryDB.find(p => p.id == id);
+    const poll = memoryDB.find((p) => p.id == id);
     poll.options[optionIndex].votes++;
     return res.json(poll);
   }
@@ -104,4 +106,5 @@ app.post("/api/polls/:id/vote", async (req, res) => {
 });
 
 // ---- START SERVER ----
-app.listen(5000, () => console.log("Server running at http://localhost:5000"));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running at port ${PORT}`));
